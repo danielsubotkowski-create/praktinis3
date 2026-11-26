@@ -107,12 +107,13 @@ void rodytiPrekes(const string kategorijos[],
                  const double kainos[],
                  const int kiekiai[],
                  int kiekis,
-                 string kategorija) {
+                 string kategorija,
+                 ostream &isvestis = cout) {
     bool rasta = false;
 
-    cout << fixed << setprecision(2);
+    isvestis << fixed << setprecision(2);
 
-    cout << left
+    isvestis << left
          << setw(13) << "Kategorija"
          << setw(43) << "Pavadinimas"
          << right
@@ -122,7 +123,7 @@ void rodytiPrekes(const string kategorijos[],
          << setw(12) << "Nuolaida"
          << setw(12) << "Moketi" << endl;
 
-    cout << "Visos pinigines reiksmes pateiktos eurais." << endl;
+    isvestis << "Visos pinigines reiksmes pateiktos eurais." << endl;
 
     for (int i = 0; i < kiekis; i++) {
         if (kategorija == "" || kategorijos[i] == kategorija) {
@@ -130,7 +131,7 @@ void rodytiPrekes(const string kategorijos[],
             double nuolaida = skaiciuotiNuolaida(kainos[i], kiekiai[i]);
             double moketi = suma - nuolaida;
 
-            cout << left
+            isvestis << left
                  << setw(13) << kategorijos[i]
                  << setw(43) << pavadinimai[i]
                  << right
@@ -145,13 +146,14 @@ void rodytiPrekes(const string kategorijos[],
     }
 
     if (!rasta) {
-        cout << "Pasirinktos kategorijos prekiu uzsakyme nera." << endl;
+        isvestis << "Pasirinktos kategorijos prekiu uzsakyme nera." << endl;
     }
 }
 
 void rodytiUzsakymoSumas(const double kainos[],
                         const int kiekiai[],
-                        int kiekis) {
+                        int kiekis,
+                        ostream &isvestis = cout) {
     double bendraSuma = 0;
     double bendraNuolaida = 0;
 
@@ -163,31 +165,32 @@ void rodytiUzsakymoSumas(const double kainos[],
                         + skaiciuotiNuolaida(kainos[i], kiekiai[i]);
     }
 
-    cout << fixed << setprecision(2);
-    cout << "Suma pries nuolaidas: " << bendraSuma << " EUR" << endl;
-    cout << "Bendra nuolaida: " << bendraNuolaida << " EUR" << endl;
-    cout << "Galutine moketina suma: "
+    isvestis << fixed << setprecision(2);
+    isvestis << "Suma pries nuolaidas: " << bendraSuma << " EUR" << endl;
+    isvestis << "Bendra nuolaida: " << bendraNuolaida << " EUR" << endl;
+    isvestis << "Galutine moketina suma: "
          << bendraSuma - bendraNuolaida << " EUR" << endl;
 }
 
 void rodytiKategorijuSumas(const string kategorijos[],
                          const double kainos[],
                          const int kiekiai[],
-                         int kiekis) {
-    cout << fixed << setprecision(2);
-    cout << "Kategoriju sumos po nuolaidu:" << endl;
+                         int kiekis,
+                         ostream &isvestis = cout) {
+    isvestis << fixed << setprecision(2);
+    isvestis << "Kategoriju sumos po nuolaidu:" << endl;
 
-    cout << "Dviraciai: "
+    isvestis << "Dviraciai: "
          << skaiciuotiKategorijosSuma(
                 kategorijos, kainos, kiekiai, kiekis, "Dviraciai")
          << " EUR" << endl;
 
-    cout << "Dalys: "
+    isvestis << "Dalys: "
          << skaiciuotiKategorijosSuma(
                 kategorijos, kainos, kiekiai, kiekis, "Dalys")
          << " EUR" << endl;
 
-    cout << "Aksesuarai: "
+    isvestis << "Aksesuarai: "
          << skaiciuotiKategorijosSuma(
                 kategorijos, kainos, kiekiai, kiekis, "Aksesuarai")
          << " EUR" << endl;
@@ -221,6 +224,52 @@ int gautiPasirinkima(int maziausias, int didziausias) {
     }
 }
 
+void isvestiAtaskaita(const string kategorijos[],
+                     const string pavadinimai[],
+                     const double kainos[],
+                     const int kiekiai[],
+                     int kiekis,
+                     ostream &isvestis) {
+    isvestis << "DVIRACIU PARDUOTUVES UZSAKYMO ATASKAITA" << endl;
+    isvestis << "Prekiu irasu: " << kiekis << endl;
+    isvestis << endl;
+
+    rodytiPrekes(kategorijos, pavadinimai, kainos,
+                 kiekiai, kiekis, "", isvestis);
+
+    isvestis << endl;
+    rodytiUzsakymoSumas(kainos, kiekiai, kiekis, isvestis);
+
+    isvestis << endl;
+    rodytiKategorijuSumas(kategorijos, kainos,
+                         kiekiai, kiekis, isvestis);
+}
+
+bool issaugotiAtaskaita(const string kategorijos[],
+                       const string pavadinimai[],
+                       const double kainos[],
+                       const int kiekiai[],
+                       int kiekis) {
+    ofstream failas("ataskaita.txt");
+
+    if (!failas.is_open()) {
+        cout << "Klaida: nepavyko atverti ataskaita.txt irasymui." << endl;
+        return false;
+    }
+
+    isvestiAtaskaita(kategorijos, pavadinimai, kainos,
+                    kiekiai, kiekis, failas);
+
+    failas.close();
+
+    if (failas.fail()) {
+        cout << "Klaida: nepavyko sekmingai irasyti ataskaitos." << endl;
+        return false;
+    }
+
+    return true;
+}
+
 int main() {
     string kategorijos[100];
     string pavadinimai[100];
@@ -242,12 +291,13 @@ int main() {
         cout << "2. Perziureti pasirinktos kategorijos prekes" << endl;
         cout << "3. Perziureti viso uzsakymo sumas" << endl;
         cout << "4. Perziureti sumas pagal kategorijas" << endl;
-        cout << "5. Parodyti visa uzsakymo suvestine" << endl;
-        cout << "6. Iseiti" << endl;
+        cout << "5. Parodyti visa uzsakymo ataskaita" << endl;
+        cout << "6. Issaugoti visa ataskaita i faila" << endl;
+        cout << "7. Iseiti" << endl;
 
-        int pasirinkimas = gautiPasirinkima(1, 6);
+        int pasirinkimas = gautiPasirinkima(1, 7);
 
-        if (pasirinkimas == 0 || pasirinkimas == 6) {
+        if (pasirinkimas == 0 || pasirinkimas == 7) {
             break;
         }
 
@@ -292,16 +342,16 @@ int main() {
             rodytiKategorijuSumas(kategorijos, kainos, kiekiai, kiekis);
 
         } else if (pasirinkimas == 5) {
-            rodytiPrekes(kategorijos, pavadinimai,
-                         kainos, kiekiai, kiekis, "");
+            isvestiAtaskaita(kategorijos, pavadinimai, kainos,
+                            kiekiai, kiekis, cout);
 
-            cout << endl;
-            rodytiUzsakymoSumas(kainos, kiekiai, kiekis);
-
-            cout << endl;
-            rodytiKategorijuSumas(kategorijos, kainos, kiekiai, kiekis);
+        } else if (pasirinkimas == 6) {
+            if (issaugotiAtaskaita(kategorijos, pavadinimai,
+                                  kainos, kiekiai, kiekis)) {
+                cout << "Ataskaita sekmingai issaugota faile ataskaita.txt."
+                     << endl;
+                                  }
         }
     }
-
     return 0;
 }
